@@ -1,0 +1,42 @@
+查看转发规则
+iptables -t nat -nvL
+
+添加转发规则
+要使用iptables的NAT功能，我们首先需要启用网卡的IP转发功能
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+如果想要永久生效，我们要编辑/etc/sysctl.conf文件，设置net.ipv4.ip_forward = 1，然后用sysctl -p命令使配置文件生效
+vi /etc/sysctl.conf
+sysctl -p
+
+入口
+iptables -t nat -A PREROUTING -s 172.31.50.224 -p tcp --dport 6379 -j DNAT --to 172.29.79.13:6379
+
+iptables -t nat -I PREROUTING ! -s 172.31.50.162 -p udp --dport 53 -j DNAT --to 114.114.114.114
+
+出口
+iptables -t nat -A POSTROUTING -s 172.31.50.57 -p tcp -j SNAT --to 172.31.50.224
+sudo iptables -t nat -A OUTPUT -p tcp --dport 6379 -j DNAT --to-destination 192.168.111.131:6379
+
+关机保存iptables转发
+iptables-save > /etc/sysconfig/iptables
+iptables-restore < /etc/sysconfig/iptables
+
+
+删除规则
+sudo iptables -t nat  -D PREROUTING 1
+sudo iptables -t nat  -D POSTROUTING 1
+sudo iptablse -t nat -D 
+
+蜜罐112
+iptables -t nat -A PREROUTING -d 172.31.50.127 -p tcp --dport 6379 -i ens33 -j DNAT --to 172.29.79.21
+
+
+
+查看规则序号
+sudo iptables -t nat -L -n --line-numbers
+
+
+防火墙状态
+systemctl status firewalld.service
+service iptables status
